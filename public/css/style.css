@@ -24,7 +24,7 @@ body {
 
 .f-info-links a {
   text-decoration: none;
-  color: #222222;
+  color: #ffffff;
 }
 
 .f-info-links a:hover {
@@ -45,10 +45,12 @@ body {
   margin-right: 1rem;
 }
 
+/* background-color: #ebebeb */
 .f-info {
   text-align: center;
   height: 8rem;
-  background-color: #ebebeb;
+  background-color: #1c2b45;
+  color: #ffffff;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
