@@ -7,7 +7,8 @@ const methodoverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const ExpressError = require("./utils/ExpressError.js");
 const wrapAsync = require("./utils/wrapAsync.js");
-const { listingSchema } = require("./schema.js");
+const { listingSchema, reviewSchema } = require("./schema.js");
+const Review = require("./models/review.js");
 
 // MongoDb connection
 const Mongo_URL = "mongodb://127.0.0.1:27017/YatraStay";
@@ -45,6 +46,16 @@ const validateListing = (req, res, next) => {
   }
 };
 
+const validateReview = (req, res, next) => {
+  let { error } = reviewSchema.validate(req.body);
+  if (error) {
+    let errMsg = error.details.map((el) => el.message).join(",");
+    throw new ExpressError(400, errMsg);
+  } else {
+    next();
+  }
+};
+
 // Index Route
 app.get(
   "/listings",
@@ -64,7 +75,7 @@ app.get(
   "/listings/:id",
   wrapAsync(async (req, res) => {
     let { id } = req.params;
-    let listing = await Listing.findById(id);
+    let listing = await Listing.findById(id).populate("reviews");
     res.render("listings/show", { listing });
   })
 );
@@ -110,6 +121,38 @@ app.delete(
     let { id } = req.params;
     let deleteListing = await Listing.findByIdAndDelete(id);
     res.redirect("/listings");
+  })
+);
+
+// Reviews
+// Post Reviews Route
+app.post(
+  "/listings/:id/reviews",
+  validateReview,
+  wrapAsync(async (req, res) => {
+    let listing = await Listing.findById(req.params.id);
+    let newReview = await Review(req.body.review);
+
+    listing.reviews.push(newReview);
+
+    await newReview.save();
+    await listing.save();
+
+    console.log("New Review Saved");
+    res.redirect(`/listings/${listing._id}`);
+  })
+);
+
+// Delete Reviews Route
+app.delete(
+  "/listings/:id/reviews/:reviewID",
+  wrapAsync(async (req, res) => {
+    let { id, reviewID } = req.params;
+
+    await Listing.findByIdAndUpdate(id, { $pull: { reviews: reviewID } });
+    await Review.findByIdAndDelete(reviewID);
+
+    res.redirect(`/listings/${id}`);
   })
 );
 

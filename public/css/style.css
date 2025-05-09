@@ -59,7 +59,7 @@ body {
 
 /* cards */
 
-.card {
+.listing-card {
   border: none !important;
   margin-bottom: 2rem;
 }
@@ -108,8 +108,21 @@ body {
   border: none !important;
 }
 
+.edit-btn:hover {
+  background-color: #f4511e !important;
+}
+
 .edit-head {
   color: #1c2b45 !important;
+}
+
+.delete-btn {
+  background-color: #d32f2f !important;
+  border: none !important;
+}
+
+.delete-btn:hover {
+  background-color: #b71c1c !important;
 }
 
 /* Show Page */
