@@ -1,14 +1,13 @@
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
-const Listing = require("./models/listing");
 const path = require("path");
 const methodoverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const ExpressError = require("./utils/ExpressError.js");
-const wrapAsync = require("./utils/wrapAsync.js");
-const { listingSchema, reviewSchema } = require("./schema.js");
-const Review = require("./models/review.js");
+
+const listings = require("./routes/listing.js");
+const reviews = require("./routes/review.js");
 
 // MongoDb connection
 const Mongo_URL = "mongodb://127.0.0.1:27017/YatraStay";
@@ -35,141 +34,8 @@ app.get("/", (req, res) => {
   res.send("Root is working");
 });
 
-// validation for schema - middleware function
-const validateListing = (req, res, next) => {
-  let { error } = listingSchema.validate(req.body);
-  if (error) {
-    let errMsg = error.details.map((el) => el.message).join(",");
-    throw new ExpressError(400, errMsg);
-  } else {
-    next();
-  }
-};
-
-const validateReview = (req, res, next) => {
-  let { error } = reviewSchema.validate(req.body);
-  if (error) {
-    let errMsg = error.details.map((el) => el.message).join(",");
-    throw new ExpressError(400, errMsg);
-  } else {
-    next();
-  }
-};
-
-// Index Route
-app.get(
-  "/listings",
-  wrapAsync(async (req, res) => {
-    let allListings = await Listing.find();
-    res.render("listings/index", { allListings });
-  })
-);
-
-// New Route
-app.get("/listings/new", (req, res) => {
-  res.render("listings/new.ejs");
-});
-
-// Show Route
-app.get(
-  "/listings/:id",
-  wrapAsync(async (req, res) => {
-    let { id } = req.params;
-    let listing = await Listing.findById(id).populate("reviews");
-    res.render("listings/show", { listing });
-  })
-);
-
-// Create Route
-app.post(
-  "/listings",
-  validateListing,
-  wrapAsync(async (req, res) => {
-    const newListing = new Listing(req.body.listing);
-    await newListing.save();
-    res.redirect("/listings");
-  })
-);
-
-// Edit Route
-app.get(
-  "/listings/:id/edit",
-  wrapAsync(async (req, res, next) => {
-    let { id } = req.params;
-    let listing = await Listing.findById(id);
-    res.render("listings/edit.ejs", { listing });
-  })
-);
-
-// Update Route
-app.put(
-  "/listings/:id",
-  validateListing,
-  wrapAsync(async (req, res) => {
-    let { id } = req.params;
-    await Listing.findByIdAndUpdate(id, {
-      ...req.body.listing,
-    });
-    res.redirect(`/listings/${id}`);
-  })
-);
-
-// Delete Route
-app.delete(
-  "/listings/:id",
-  wrapAsync(async (req, res) => {
-    let { id } = req.params;
-    let deleteListing = await Listing.findByIdAndDelete(id);
-    res.redirect("/listings");
-  })
-);
-
-// Reviews
-// Post Reviews Route
-app.post(
-  "/listings/:id/reviews",
-  validateReview,
-  wrapAsync(async (req, res) => {
-    let listing = await Listing.findById(req.params.id);
-    let newReview = await Review(req.body.review);
-
-    listing.reviews.push(newReview);
-
-    await newReview.save();
-    await listing.save();
-
-    console.log("New Review Saved");
-    res.redirect(`/listings/${listing._id}`);
-  })
-);
-
-// Delete Reviews Route
-app.delete(
-  "/listings/:id/reviews/:reviewID",
-  wrapAsync(async (req, res) => {
-    let { id, reviewID } = req.params;
-
-    await Listing.findByIdAndUpdate(id, { $pull: { reviews: reviewID } });
-    await Review.findByIdAndDelete(reviewID);
-
-    res.redirect(`/listings/${id}`);
-  })
-);
-
-// app.get("/testListing", async (req, res) => {
-//   let sampleListing = new Listing({
-//     title: "Beachfront Villa in Goa",
-//     description:
-//       "Enjoy a peaceful stay in this sea-facing villa with private garden and hammock.",
-//     price: 4500,
-//     location: "Anjuna Beach, Goa",
-//     country: "India",
-//   });
-
-//   await sampleListing.save();
-//   console.log("Sample was saved");
-//   res.send("Succesfull testing");
-// });
+app.use("/listings", listings);
+app.use("/listings/:id/reviews", reviews);
 
 app.all("/*splat", (req, res, next) => {
   next(new ExpressError(404, "Page Not Found!"));
