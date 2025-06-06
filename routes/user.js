@@ -8,6 +8,7 @@ router.get("/signup", (req, res) => {
   res.render("user/signup.ejs");
 });
 
+// Signup user
 router.post(
   "/signup",
   wrapAsync(async (req, res) => {
@@ -16,8 +17,13 @@ router.post(
       const newUser = new User({ email, username });
       const registeredUser = await User.register(newUser, password);
       console.log(registeredUser);
-      req.flash("success", "Welcome to YatraStay your Yatra begins");
-      res.redirect("/listings");
+      req.login(registeredUser, (err) => {
+        if (err) {
+          return next(err);
+        }
+        req.flash("success", "Welcome to YatraStay your Yatra begins");
+        res.redirect("/listings");
+      });
     } catch (err) {
       req.flash("error", err.message);
       res.redirect("/signup");
@@ -29,6 +35,7 @@ router.get("/login", (req, res) => {
   res.render("user/login.ejs");
 });
 
+// Login user
 router.post(
   "/login",
   passport.authenticate("local", {
@@ -40,5 +47,16 @@ router.post(
     res.redirect("/listings");
   }
 );
+
+// Logout user
+router.get("/logout", (req, res, next) => {
+  req.logOut((err) => {
+    if (err) {
+      return next();
+    }
+    req.flash("success", "you are logged out!");
+    res.redirect("/listings");
+  });
+});
 
 module.exports = router;
