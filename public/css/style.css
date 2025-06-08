@@ -141,3 +141,9 @@ body {
 .show-head {
   color: #1c2b45 !important;
 }
+
+.owner {
+  color: white;
+  background-color: #1c2b45 !important;
+  border-radius: 3px;
+}
